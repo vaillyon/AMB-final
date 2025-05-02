@@ -10,7 +10,6 @@ public class AMBTokenizer {
     public static ArrayList<AMBTokens> tokenize(String fileName) {
         ArrayList<AMBTokens> tokens = new ArrayList<>();
 
-
         StringBuilder rawData = new StringBuilder();
 
         try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
@@ -24,23 +23,22 @@ public class AMBTokenizer {
             System.exit(1);
         }
 
-        // Preprocess
         ArrayList<String> stringyTokens = preprocessTokens(rawData.toString());
 
-        // Process based on type
+
         for (String str : stringyTokens) {
             AMBTokens tok = switch (str) {
-                // keyword
+
                 case "START_PROGRAM" -> new START_PROGRAM();
-                case "END_PROGRAM." -> new END_PROGRAM();
+                case "END_PROGRAM" -> new END_PROGRAM();
                 case "START_SUB" -> new START_SUB();
-                case "END_SUB." -> new END_SUB();
+                case "END_SUB" -> new END_SUB();
 
-                // Keywords
-                case "CODE", "IF", "THEN", "ELSE", "END_IF", "WHILE", "DO", "END_WHILE", "GOSUB", "INT", "STRING",
-                     "INPUT_INT", "INPUT_STRING", "PRINT" -> new KeyWords(str);
 
-                // Symbols
+                case "CODE", "IF", "THEN", "ELSE", "END_IF", "WHILE", "DO", "END_WHILE", "GOSUB",
+                     "INT", "STRING", "INPUT_INT", "INPUT_STRING", "PRINT" -> new KeyWords(str);
+
+
                 case "(" -> new SoftOpen();
                 case ")" -> new SoftClose();
                 case "[" -> new HardOpen();
@@ -52,29 +50,44 @@ public class AMBTokenizer {
                 case "/" -> new MultOp(MultOp.Operand.divide);
                 case "+", "-" -> new Symbols("addOp");
                 case "<", ">", "=<", "=>", "=", "!=" -> new Symbols("compOp");
+
+
+                case "." -> null;
+
+
                 default -> determineTokenType(str);
             };
 
             if (tok == null) {
-                System.err.println("Tokenizing error: Invalid token \"" + str + "\"");
-                System.exit(1);
-            }
 
-            tokens.add(tok);
+                if (!str.equals(".")) {
+                    System.err.println("Tokenizing error: Invalid token \"" + str + "\"");
+                    System.exit(1);
+                }
+            } else {
+                tokens.add(tok);
+            }
         }
 
         return tokens;
     }
 
-    // Determines type
+
     private static AMBTokens determineTokenType(String str) {
-        if (str.matches("-?[1-9][0-9]*|0")) { // Integer number
+
+        if (str.matches("-?[0-9]+")) {
             return new IntToken(Integer.parseInt(str));
-        } else if (str.matches("\"[^\"]*\"")) { // String literal
+        }
+
+        else if (str.matches("\"[^\"]*\"")) {
             return new StringToken(str);
-        } else if (str.matches("[a-zA-Z][a-zA-Z0-9_]*")) { // Label (e.g., variable or function name)
-            return new CODE(str); // Labels are treated as CODE tokens
-        } else {
+        }
+
+        else if (str.matches("[a-zA-Z][a-zA-Z0-9_]*")) {
+            return new CODE(str);
+        }
+
+        else {
             return null;
         }
     }
@@ -94,18 +107,26 @@ public class AMBTokenizer {
                     result.add(stringBuilder.toString());
                     inString = false;
                 }
-            } else {
-                if (part.startsWith("\"")) {
-                    if (part.endsWith("\"") && part.length() > 1) {
-                        result.add(part); // full string on one word
-                    } else {
-                        inString = true;
-                        stringBuilder = new StringBuilder(part);
-                    }
-                } else {
-                    result.add(part);
-                }
+                continue;
             }
+
+            if (part.startsWith("\"")) {
+                if (part.endsWith("\"") && part.length() > 1) {
+                    result.add(part);
+                } else {
+                    inString = true;
+                    stringBuilder = new StringBuilder(part);
+                }
+                continue;
+            }
+
+
+            while (part.length() > 1 && (part.endsWith(":") || part.endsWith("."))) {
+                result.add(part.substring(0, part.length() - 1));
+                part = part.substring(part.length() - 1);
+            }
+
+            result.add(part);
         }
 
         return result;

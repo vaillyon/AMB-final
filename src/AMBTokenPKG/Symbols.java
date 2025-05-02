@@ -2,10 +2,10 @@ package AMBTokenPKG;
 
 public class Symbols extends AMBTokens {
 
-    private final String type; // Type of symbol
+    private final String type;
 
     public Symbols(String type) {
-        this.type = type; //  symbol type (e.g., "semi", "colon")
+        this.type = type; //   type
     }
 
     @Override

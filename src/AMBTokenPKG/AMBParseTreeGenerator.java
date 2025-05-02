@@ -22,11 +22,30 @@ public class AMBParseTreeGenerator {
             node.addChild(cur);
             currentToken++;
             node.addChild(variableList());
+            node.addChild(codeBlock());
             return node;
         } else {
             throwError("START_PROGRAM", cur);
             return null;
         }
+    }
+
+    public static AMBNodes codeBlock() {
+        AMBNodes node = new AMBNodes();
+        while (currentToken < code.size()) {
+            AMBTokens cur = code.get(currentToken);
+            if (cur instanceof END_PROGRAM) {
+                node.addChild(cur);
+                currentToken++;
+                break;
+            } else if (cur instanceof START_SUB || cur instanceof KeyWords kw && kw.getKeyword().equals("CODE")) {
+                node.addChild(subList());
+            } else {
+                System.err.println("Unexpected token in codeBlock: " + cur.getClass().getSimpleName());
+                currentToken++;
+            }
+        }
+        return node;
     }
 
     public static AMBNodes variableList() {
@@ -104,6 +123,7 @@ public class AMBParseTreeGenerator {
         throwError("INT label; or [TYPE] label [number];", cur);
         return null;
     }
+
     public static AMBNodes expectLabel() {
         AMBTokens cur = code.get(currentToken);
         if (cur instanceof CODE || cur instanceof KeyWords) {
@@ -113,6 +133,7 @@ public class AMBParseTreeGenerator {
         throwError("label", cur);
         return null;
     }
+
 
     public static AMBNodes subList() {
         AMBTokens cur = code.get(currentToken);
@@ -124,7 +145,7 @@ public class AMBParseTreeGenerator {
             expectTokenType("colon");
             node.addChild(code.get(currentToken - 1));
             node.addChild(codeList());
-            node.addChild(subList());
+            node.addChild(subList());  
             return node;
         } else if (cur instanceof END_PROGRAM) {
             AMBNodes node = new AMBNodes();
@@ -132,19 +153,20 @@ public class AMBParseTreeGenerator {
             currentToken++;
             return node;
         }
-        throwError("START_SUB or END_PROGRAM.", cur);
+        throwError("START_SUB or END_PROGRAM", cur);
         return null;
     }
+
     private static AMBNodes codeLine() {
         AMBTokens cur = code.get(currentToken);
         AMBNodes node = new AMBNodes();
-
 
         node.addChild(cur);
         currentToken++;
 
         return node;
     }
+
 
     public static AMBNodes codeList() {
         AMBTokens cur = code.get(currentToken);
@@ -162,9 +184,6 @@ public class AMBParseTreeGenerator {
         }
         return node;
     }
-
-
-
 
     private static void expectToken(Class<?> expectedType) {
         AMBTokens cur = code.get(currentToken);

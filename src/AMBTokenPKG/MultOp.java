@@ -7,7 +7,7 @@ public class MultOp extends Symbols {
     private final Operand op;
 
     public MultOp(Operand op) {
-        // Symbols constructor expects a String like "MULT_OP"
+
         super("MULT_OP");
         this.op = op;
     }
